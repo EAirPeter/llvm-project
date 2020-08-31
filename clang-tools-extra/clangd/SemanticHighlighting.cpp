@@ -83,11 +83,15 @@ llvm::Optional<HighlightingKind> kindForDecl(const NamedDecl *D) {
     return HighlightingKind::EnumConstant;
   if (isa<ParmVarDecl>(D))
     return HighlightingKind::Parameter;
+  // MOD BEGIN
   if (auto *VD = dyn_cast<VarDecl>(D))
-    return VD->isStaticDataMember()
-               ? HighlightingKind::StaticField
-               : VD->isLocalVarDecl() ? HighlightingKind::LocalVariable
-                                      : HighlightingKind::Variable;
+    return VD->isConstexpr()
+               ? HighlightingKind::ConstexprVariable
+               : VD->isStaticDataMember()
+                     ? HighlightingKind::StaticField
+                     : VD->isLocalVarDecl() ? HighlightingKind::LocalVariable
+                                            : HighlightingKind::Variable;
+  // MOD END
   if (isa<BindingDecl>(D))
     return HighlightingKind::Variable;
   if (isa<FunctionDecl>(D))
@@ -95,9 +99,12 @@ llvm::Optional<HighlightingKind> kindForDecl(const NamedDecl *D) {
   if (isa<NamespaceDecl>(D) || isa<NamespaceAliasDecl>(D) ||
       isa<UsingDirectiveDecl>(D))
     return HighlightingKind::Namespace;
-  if (isa<TemplateTemplateParmDecl>(D) || isa<TemplateTypeParmDecl>(D) ||
-      isa<NonTypeTemplateParmDecl>(D))
+  // MOD BEGIN
+  if (isa<TemplateTemplateParmDecl>(D) || isa<TemplateTypeParmDecl>(D))
     return HighlightingKind::TemplateParameter;
+  if (isa<NonTypeTemplateParmDecl>(D))
+    return HighlightingKind::NonTypeTemplateParameter;
+  // MOD END
   return llvm::None;
 }
 llvm::Optional<HighlightingKind> kindForType(const Type *TP) {
@@ -366,6 +373,10 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &OS, HighlightingKind K) {
     return OS << "LocalVariable";
   case HighlightingKind::Parameter:
     return OS << "Parameter";
+  // MOD BEGIN
+  case HighlightingKind::ConstexprVariable:
+    return OS << "ConstexprVariable";
+  // MOD END
   case HighlightingKind::Function:
     return OS << "Function";
   case HighlightingKind::Method:
@@ -392,6 +403,10 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &OS, HighlightingKind K) {
     return OS << "Namespace";
   case HighlightingKind::TemplateParameter:
     return OS << "TemplateParameter";
+  // MOD BEGIN
+  case HighlightingKind::NonTypeTemplateParameter:
+    return OS << "NonTypeTemplateParameter";
+  // MOD END
   case HighlightingKind::Primitive:
     return OS << "Primitive";
   case HighlightingKind::Macro:
@@ -514,6 +529,10 @@ llvm::StringRef toTextMateScope(HighlightingKind Kind) {
     return "variable.other.local.cpp";
   case HighlightingKind::Parameter:
     return "variable.parameter.cpp";
+  // MOD BEGIN
+  case HighlightingKind::ConstexprVariable:
+    return "variable.other.constexpr.cpp";
+  // MOD END
   case HighlightingKind::Field:
     return "variable.other.field.cpp";
   case HighlightingKind::StaticField:
@@ -534,6 +553,10 @@ llvm::StringRef toTextMateScope(HighlightingKind Kind) {
     return "entity.name.namespace.cpp";
   case HighlightingKind::TemplateParameter:
     return "entity.name.type.template.cpp";
+  // MOD BEGIN
+  case HighlightingKind::NonTypeTemplateParameter:
+    return "entity.name.nontype.template.cpp";
+  // MOD END
   case HighlightingKind::Primitive:
     return "storage.type.primitive.cpp";
   case HighlightingKind::Macro:

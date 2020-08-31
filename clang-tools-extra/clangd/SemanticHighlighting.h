@@ -28,6 +28,7 @@ enum class HighlightingKind {
   Variable = 0,
   LocalVariable,
   Parameter,
+  ConstexprVariable, // MOD
   Function,
   Method,
   StaticMethod,
@@ -40,6 +41,7 @@ enum class HighlightingKind {
   DependentType,
   DependentName,
   Namespace,
+  NonTypeTemplateParameter, // MOD
   TemplateParameter,
   Primitive,
   Macro,
